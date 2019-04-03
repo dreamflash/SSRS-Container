@@ -102,7 +102,7 @@ If (! $configset.IsInitialized) {
     # IsWindowUser - A Boolean value indicating whether the specified user name is a Windows user or a SQL Server user.
     #
     #$dbscript = $configset.GenerateDatabaseRightsScript($configset.WindowsServiceIdentityConfigured, "ReportServer", $false, $true).Script
-	$dbscript = $configset.GenerateDatabaseRightsScript("NT AUTHORITY\NetworkService", "ReportServer", $true, $true).Script
+    $dbscript = $configset.GenerateDatabaseRightsScript("NT AUTHORITY\NetworkService", "ReportServer", $true, $true).Script
     $db.ExecuteNonQuery($dbscript)
 
     # Set the database connection info
@@ -113,7 +113,7 @@ If (! $configset.IsInitialized) {
     # 2 - Windows Service
     $credentials_type = 1
     #$configset.SetDatabaseConnection("(local)", "ReportServer", 2, "", "")
-	$configset.SetDatabaseConnection($db_instance, "ReportServer", $credentials_type, $db_username, $db_password)
+    $configset.SetDatabaseConnection($db_instance, "ReportServer", $credentials_type, $db_username, $db_password)
 
     $configset.SetVirtualDirectory("ReportServerWebService", "ReportServer", 1033)
     $configset.ReserveURL("ReportServerWebService", "http://+:80", 1033)
