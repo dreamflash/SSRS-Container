@@ -30,8 +30,6 @@ If (! $configset.IsInitialized) {
     [string]$dbscript = $configset.GenerateDatabaseCreationScript("ReportServer", 1033, $false).Script
 
     # Import the SQL Server PowerShell module
-	Install-PackageProvider nuget -Force -Confirm:$False
-	Install-Module -Name SqlServer -Force -Confirm:$False -AllowClobber
 	Import-Module SqlServer
 	
     #  

@@ -1,6 +1,6 @@
 FROM mcr.microsoft.com/windows/servercore
 
-LABEL  Name=SSRS Docker container
+LABEL  Name="SSRS Docker container"
 
 ENV exe "https://download.microsoft.com/download/E/6/4/E6477A2A-9B58-40F7-8AD6-62BB8491EA78/SQLServerReportingServices.exe"
 
@@ -22,8 +22,11 @@ COPY newadmin.ps1 /
 
 WORKDIR /
 
-RUN  Invoke-WebRequest -Uri $env:exe -OutFile SQLServerReportingServices.exe ; \
-     Start-Process -Wait -FilePath .\SQLServerReportingServices.exe -ArgumentList "/quiet", "/norestart", "/IAcceptLicenseTerms", "/Edition=$env:SSRS_edition" -PassThru -Verbose ; \
-     Remove-Item -Force SQLServerReportingServices.exe
+RUN  Invoke-WebRequest -Uri $env:exe -OutFile ssrs2017.exe ; \
+     Start-Process -Wait -FilePath .\ssrs2017.exe -ArgumentList "/quiet", "/norestart", "/IAcceptLicenseTerms", "/Edition=$env:SSRS_edition" -PassThru -Verbose ; \
+     Install-PackageProvider nuget -Force -Confirm:$False ; \
+     Remove-Item -Force ssrs2017.exe
+
+RUN Install-Module -Name SqlServer -Force -Confirm:$False
 
 CMD .\start -db_instance $env:db_instance -db_username $env:db_username -db_password $env:db_password -ssrs_user $env:ssrs_user -ssrs_password $env:ssrs_password -Verbose
