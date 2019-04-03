@@ -1,18 +1,16 @@
-﻿param(
-    
+﻿param(    
     [Parameter(Mandatory = $true)]
     [string]$username,
 
     [Parameter(Mandatory = $true)]
     [string]$password
-
 )
+
 if ($username -eq "_") {
    
     Write-Verbose "ERR: No SSRS user specified"
     exit 1
 }
-
 
 if ($password -eq "_") {
     if (Test-Path $env:ssrs_password_path) {
@@ -23,6 +21,7 @@ if ($password -eq "_") {
         exit 1
     }
 }
+
 $secpass = ConvertTo-SecureString  -AsPlainText $password -Force
 New-LocalUser "$username" -Password $secpass -FullName "$username" -Description "Local admin $username"
 Add-LocalGroupMember -Group "Administrators" -Member "$username"
