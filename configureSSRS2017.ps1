@@ -34,7 +34,7 @@ If (! $configset.IsInitialized) {
 	Install-Module -Name SqlServer -Force -Confirm:$False -AllowClobber
 	Import-Module SqlServer
 	
-	#  
+    #  
     # Loads the SQL Server Management Objects (SMO)  
     #  
     $assemblylist =   
@@ -86,14 +86,14 @@ If (! $configset.IsInitialized) {
     #
     # UserName - The user name or Windows security identifier (SID) of the user to which the script will grant rights.
     #    
-    #            (S-1-5-18)                  :	Local System	    <Domain>\<ComputerName>$
-    #            .\LocalSystem               : 	Local System	    <Domain>\<ComputerName>$
-    #            ComputerName\LocalSystem	 :  Local System	    <Domain>\<ComputerName>$
-    #            LocalSystem	             :  Local System	    <Domain>\<ComputerName>$
-    #            (S-1-5-20)	                 :  Network Service	    <Domain>\<ComputerName>$
-    #            NT AUTHORITY\NetworkService :	Network Service	    <Domain>\<ComputerName>$
-    #            (S-1-5-19)	Local Service	 :  Error - see below.
-    #            NT AUTHORITY\LocalService	 :  Local Service	    Error - see below.	
+    #            (S-1-5-18)                  :  Local System        <Domain>\<ComputerName>$
+    #            .\LocalSystem               :  Local System        <Domain>\<ComputerName>$
+    #            ComputerName\LocalSystem    :  Local System        <Domain>\<ComputerName>$
+    #            LocalSystem                 :  Local System        <Domain>\<ComputerName>$
+    #            (S-1-5-20)	                 :  Network Service     <Domain>\<ComputerName>$
+    #            NT AUTHORITY\NetworkService :  Network Service     <Domain>\<ComputerName>$
+    #            (S-1-5-19)	Local Service    :  Error - see below.
+    #            NT AUTHORITY\LocalService   :  Local Service       Error - see below.	
     #
     # DatabaseName - The database name to which the script will grant access to the user.
     #
