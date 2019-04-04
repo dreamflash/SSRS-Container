@@ -81,9 +81,13 @@ If (! $configset.IsInitialized) {
     # Set "NT AUTHORITY\NetworkService" user role in database
     $ssrs_svc_acct_role_script = [IO.File]::ReadAllText(".\ssrs_svc_account_setup.sql")
     $db.ExecuteNonQuery($ssrs_svc_acct_role_script)
-    
+
     # Create the ReportServer and ReportServerTempDB databases
     $db.ExecuteNonQuery($dbscript)
+    
+    # Set "NT AUTHORITY\NetworkService" RSExc role in SSRS database
+    $ssrs_svc_acct_role_script = [IO.File]::ReadAllText(".\ssrs_svc_rsexec_role.sql")
+    $db.ExecuteNonQuery($ssrs_svc_acct_role_script)
 
     # Set permissions for the databases
     # Reference: https://docs.microsoft.com/en-us/sql/reporting-services/wmi-provider-library-reference/configurationsetting-method-generatedatabaserightsscript?view=sql-server-2017
@@ -108,10 +112,6 @@ If (! $configset.IsInitialized) {
     #$dbscript = $configset.GenerateDatabaseRightsScript($configset.WindowsServiceIdentityConfigured, "ReportServer", $false, $true).Script
     $dbscript = $configset.GenerateDatabaseRightsScript("NT AUTHORITY\NetworkService", "ReportServer", $true, $true).Script
     $db.ExecuteNonQuery($dbscript)
-    
-    # Set "NT AUTHORITY\NetworkService" RSExc role in SSRS database
-    #$ssrs_svc_acct_role_script = [IO.File]::ReadAllText(".\ssrs_svc_rsexec_role.sql")
-    #$db.ExecuteNonQuery($ssrs_svc_acct_role_script)
 
     # Set the database connection info
     # Reference: https://docs.microsoft.com/en-us/sql/reporting-services/wmi-provider-library-reference/configurationsetting-method-setdatabaseconnection?view=sql-server-2017
