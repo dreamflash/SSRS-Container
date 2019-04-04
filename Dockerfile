@@ -19,6 +19,8 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPref
 COPY start.ps1 /
 COPY configureSSRS2017.ps1 /
 COPY newadmin.ps1 /
+COPY ssrs_svc_account_setup.sql /
+#COPY ssrs_svc_rsexec_role.sql /
 
 WORKDIR /
 
