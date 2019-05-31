@@ -14,7 +14,7 @@ param(
 Write-Verbose "SSRS Config"
 
 function Get-ConfigSet() {
-    return Get-WmiObject -namespace "root\Microsoft\SqlServer\ReportServer\RS_SSRS\v14\Admin" -class MSReportServer_ConfigurationSetting -ComputerName localhost
+	return Get-WmiObject -namespace "root\Microsoft\SqlServer\ReportServer\RS_SSRS\v14\Admin" -class MSReportServer_ConfigurationSetting -ComputerName $env:ComputerName
 }
 
 # Allow importing of sqlps module
@@ -26,12 +26,9 @@ $configset = Get-ConfigSet
 $configset
 
 If (! $configset.IsInitialized) {
-    # Get the ReportServer and ReportServerTempDB creation script
-    [string]$dbscript = $configset.GenerateDatabaseCreationScript("ReportServer", 1033, $false).Script
-
     # Import the SQL Server PowerShell module
 	Import-Module SqlServer
-	
+    
     #  
     # Loads the SQL Server Management Objects (SMO)  
     #  
@@ -74,20 +71,24 @@ If (! $configset.IsInitialized) {
     $conn.ServerInstance = $db_instance
     $conn.Connect()
     $smo = New-Object Microsoft.SqlServer.Management.Smo.Server($conn)
-
+    
+    # Set service account
+    # Reference: https://docs.microsoft.com/en-us/sql/reporting-services/wmi-provider-library-reference/configurationsetting-method-setwindowsserviceidentity?view=sql-server-2017
+    $configset.SetWindowsServiceIdentity($true, "Builtin\NetworkService", "")
+    
     # Select SSRS SQL database
     $db = $smo.Databases["master"]
 
-    # Set "NT AUTHORITY\NetworkService" user role in database
-    $ssrs_svc_acct_role_script = [IO.File]::ReadAllText(".\ssrs_svc_account_setup.sql")
-    $db.ExecuteNonQuery($ssrs_svc_acct_role_script)
-
     # Create the ReportServer and ReportServerTempDB databases
+    # Get the ReportServer and ReportServerTempDB creation script
+	Write-Verbose "*** SSRS generate database creation script ***"
+    [string]$dbscript = $configset.GenerateDatabaseCreationScript("ReportServer", 1033, $false).Script
     $db.ExecuteNonQuery($dbscript)
-    
-    # Set "NT AUTHORITY\NetworkService" RSExc role in SSRS database
-    $ssrs_svc_acct_role_script = [IO.File]::ReadAllText(".\ssrs_svc_rsexec_role.sql")
-    $db.ExecuteNonQuery($ssrs_svc_acct_role_script)
+	
+	## Set "NT AUTHORITY\NetworkService" RSExc role in SSRS database
+	#Write-Verbose "*** SSRS setup SQL RSExecRole ***"
+    #$ssrs_svc_acct_role_script = [IO.File]::ReadAllText(".\ssrs_svc_rsexec_role.sql")
+    #$db.ExecuteNonQuery($ssrs_svc_acct_role_script) 
 
     # Set permissions for the databases
     # Reference: https://docs.microsoft.com/en-us/sql/reporting-services/wmi-provider-library-reference/configurationsetting-method-generatedatabaserightsscript?view=sql-server-2017
@@ -109,9 +110,10 @@ If (! $configset.IsInitialized) {
     #
     # IsWindowUser - A Boolean value indicating whether the specified user name is a Windows user or a SQL Server user.
     #
+	Write-Verbose "*** SSRS apply database rights script ***"
     #$dbscript = $configset.GenerateDatabaseRightsScript($configset.WindowsServiceIdentityConfigured, "ReportServer", $false, $true).Script
     $dbscript = $configset.GenerateDatabaseRightsScript("NT AUTHORITY\NetworkService", "ReportServer", $true, $true).Script
-    $db.ExecuteNonQuery($dbscript)
+    $db.ExecuteNonQuery($dbscript)   
 
     # Set the database connection info
     # Reference: https://docs.microsoft.com/en-us/sql/reporting-services/wmi-provider-library-reference/configurationsetting-method-setdatabaseconnection?view=sql-server-2017
@@ -119,9 +121,10 @@ If (! $configset.IsInitialized) {
     # 0 - Windows
     # 1 - SQL Server
     # 2 - Windows Service
-    $credentials_type = 1
-    #$configset.SetDatabaseConnection("(local)", "ReportServer", 2, "", "")
-    $configset.SetDatabaseConnection($db_instance, "ReportServer", $credentials_type, $db_username, $db_password)
+    $credentials_type = 2
+    ##$configset.SetDatabaseConnection("(local)", "ReportServer", 2, "", "")  ## SSRS and SQL database on a same server
+	##$configset.SetDatabaseConnection($db_instance, "ReportServer", 1, $db_username, $db_password) ## SQL database is a remote server and using SQL user account to connect
+    $configset.SetDatabaseConnection($db_instance, "ReportServer", $credentials_type, "", "")
 
     $configset.SetVirtualDirectory("ReportServerWebService", "ReportServer", 1033)
     $configset.ReserveURL("ReportServerWebService", "http://+:80", 1033)
@@ -130,12 +133,23 @@ If (! $configset.IsInitialized) {
     $configset.SetVirtualDirectory("ReportServerWebApp", "Reports", 1033)
     $configset.ReserveURL("ReportServerWebApp", "http://+:80", 1033)
 
+    # Set database connection timeout and query timeout
+    $configset.SetDatabaseLogonTimeout(30);
+    $configset.SetDatabaseQueryTimeout(120);
+
+    # Initialize SSRS server
     $configset.InitializeReportServer($configset.InstallationID)
 
     # Re-start services?
     $configset.SetServiceState($false, $false, $false)
     Restart-Service $configset.ServiceName
     $configset.SetServiceState($true, $true, $true)
+	
+	# Delete encryption content and then re-encrypt
+	echo 'Y' | CMD /c "C:\Program Files\Microsoft SQL Server Reporting Services\Shared Tools\RSKeyMgmt.exe" -d -i SSRS
+	Start-Sleep -Seconds 10
+    echo 'Y' | CMD /c "C:\Program Files\Microsoft SQL Server Reporting Services\Shared Tools\RSKeyMgmt.exe" -s -i SSRS
+    Start-Sleep -Seconds 10	
 
     # Update the current configuration
     $configset = Get-ConfigSet
@@ -146,8 +160,11 @@ If (! $configset.IsInitialized) {
     $configset.IsWindowsServiceEnabled
     $configset.ListReportServersInDatabase()
     $configset.ListReservedUrls();
+	
+    Write-Verbose "Output Get-ConfigSet *****"
+    $configset
 
-    $inst = Get-WmiObject -namespace "root\Microsoft\SqlServer\ReportServer\RS_SSRS\v14" -class MSReportServer_Instance -ComputerName localhost
+	$inst = Get-WmiObject -namespace "root\Microsoft\SqlServer\ReportServer\RS_SSRS\v14" -class MSReportServer_Instance -ComputerName $env:ComputerName
 
     $inst.GetReportServerUrls()
 }

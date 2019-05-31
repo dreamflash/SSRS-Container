@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/windows/servercore
+FROM mcr.microsoft.com/windows/servercore:ltsc2019
 
 LABEL  Name="SSRS Docker container"
 
@@ -10,7 +10,7 @@ ENV db_instance="_" \
     sa_password_path="C:\ProgramData\Docker\secrets\sa-password" \
     ssrs_user="_" \
     ssrs_password="_" \
-    SSRS_edition="EVAL" \
+    SSRS_edition="Dev" \
     ssrs_password_path="C:\ProgramData\Docker\secrets\ssrs-password"    
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
@@ -19,15 +19,18 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPref
 COPY start.ps1 /
 COPY configureSSRS2017.ps1 /
 COPY newadmin.ps1 /
-COPY ssrs_svc_account_setup.sql /
-COPY ssrs_svc_rsexec_role.sql /
+##COPY ssrs_svc_rsexec_role.sql /
 
 WORKDIR /
 
+##RUN  Invoke-WebRequest -Uri $env:exe -OutFile ssrs2017.exe ; \
+##     Start-Process -Wait -FilePath .\ssrs2017.exe -ArgumentList "/quiet", "/norestart", "/IAcceptLicenseTerms", "/PID=$env:SSRS_PID" -PassThru -Verbose ; \
+##     Install-PackageProvider nuget -Force -Confirm:$False ; \
+##     Remove-Item -Force ssrs2017.exe
 RUN  Invoke-WebRequest -Uri $env:exe -OutFile ssrs2017.exe ; \
      Start-Process -Wait -FilePath .\ssrs2017.exe -ArgumentList "/quiet", "/norestart", "/IAcceptLicenseTerms", "/Edition=$env:SSRS_edition" -PassThru -Verbose ; \
      Install-PackageProvider nuget -Force -Confirm:$False ; \
-     Remove-Item -Force ssrs2017.exe
+     Remove-Item -Force ssrs2017.exe	 
 
 RUN Install-Module -Name SqlServer -Force -Confirm:$False
 
