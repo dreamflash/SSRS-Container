@@ -34,4 +34,4 @@ RUN  Invoke-WebRequest -Uri $env:exe -OutFile ssrs2017.exe ; \
 
 RUN Install-Module -Name SqlServer -Force -Confirm:$False
 
-CMD .\start -db_instance $env:db_instance -db_username $env:db_username -db_password $env:db_password -ssrs_user $env:ssrs_user -ssrs_password $env:ssrs_password -Verbose
+CMD .\start.ps1 -db_instance $env:db_instance -db_username $env:db_username -db_password $env:db_password -ssrs_user $env:ssrs_user -ssrs_password $env:ssrs_password -Verbose

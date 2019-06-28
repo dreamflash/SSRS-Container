@@ -61,11 +61,10 @@ If (! $configset.IsInitialized) {
     }
 
     # Establish a connection to the database server (remote host)
-    $conn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $env:ComputerName
-    $conn.ApplicationName = "SCOB Script"
-    $conn.StatementTimeout = 0
+    $conn = New-Object Microsoft.SqlServer.Management.Common.ServerConnection
+    $conn.StatementTimeout = 20
     $conn.ConnectTimeout = 30
-    $conn.LoginSecure = $FALSE
+    $conn.LoginSecure = $false
     $conn.Login = $db_username
     $conn.Password = $db_password
     $conn.ServerInstance = $db_instance
