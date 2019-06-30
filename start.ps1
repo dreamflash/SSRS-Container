@@ -15,6 +15,9 @@ param(
     [string]$ssrs_password
 )
 
+Write-Verbose "Delay 5 seconds for container to get ready..."
+Start-Sleep -Seconds 5
+
 Write-Verbose "SSRS Config"
 .\configureSSRS2017 -db_instance $db_instance -db_username $db_username -db_password $db_password -Verbose
 
